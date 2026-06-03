@@ -1,147 +1,140 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, RotateCcw } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+
 import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
-import TripForm from '@/components/TripForm';
-import Timeline from '@/components/Timeline';
-import HowItWorks from '@/components/HowItWorks';
-import PopularRoutes from '@/components/PopularRoutes';
+import HeroSection from '@/components/HeroSection';
+import FeaturesSection from '@/components/FeaturesSection';
+import DestinationsGrid from '@/components/DestinationsGrid';
+import FAQSection from '@/components/FAQSection';
 import Footer from '@/components/Footer';
-import { mockItinerary } from '@/lib/mock-data';
+import LoadingScreen from '@/components/LoadingScreen';
+import TimelineResult from '@/components/TimelineResult';
+
 import { ItineraryResponse, TripInput } from '@/types/itinerary';
 
-type AppState = 'landing' | 'planning' | 'result';
+// Fallback mock when no API key is set (dev/demo mode)
+import { mockItinerary } from '@/lib/mock-data';
+
+type AppState = 'landing' | 'loading' | 'result';
 
 export default function HomePage() {
   const [appState, setAppState] = useState<AppState>('landing');
   const [itinerary, setItinerary] = useState<ItineraryResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const plannerRef = useRef<HTMLDivElement>(null);
+  const [tripInput, setTripInput] = useState<TripInput | undefined>();
+  const [error, setError] = useState<string | null>(null);
 
-  const handlePlanClick = () => {
-    setAppState('planning');
-    setTimeout(() => {
-      plannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+  const heroRef = useRef<HTMLDivElement>(null);
+
+  const scrollToHero = () => {
+    heroRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleFormSubmit = async (data: TripInput) => {
-    setIsLoading(true);
-    // Simulate API call — replace with real Gemini endpoint later
-    await new Promise((r) => setTimeout(r, 2200));
-    setItinerary(mockItinerary);
-    setIsLoading(false);
-    setAppState('result');
-    setTimeout(() => {
-      plannerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+  const handleSubmit = async (data: TripInput) => {
+    setTripInput(data);
+    setError(null);
+    setAppState('loading');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    try {
+      const res = await fetch('/api/generate-itinerary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        const errMsg = errJson.error as string | undefined;
+
+        // Graceful fallback to mock data if API key missing
+        if (res.status === 503 || errMsg?.includes('GEMINI_API_KEY')) {
+          console.warn('[SafarAI] API key not configured — using mock data for demo');
+          await delay(2000);
+          setItinerary(mockItinerary);
+          setAppState('result');
+          return;
+        }
+
+        throw new Error(errMsg ?? `HTTP ${res.status}`);
+      }
+
+      const json: ItineraryResponse = await res.json();
+      setItinerary(json);
+      setAppState('result');
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      setAppState('landing');
+    }
   };
 
   const handleReset = () => {
     setAppState('landing');
     setItinerary(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTripInput(undefined);
+    setError(null);
+    setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-
-      {/* Landing sections */}
+    <div className="bg-[var(--bg-base)] min-h-screen">
+      {/* ── LOADING STATE ── */}
       <AnimatePresence>
-        {appState === 'landing' && (
-          <motion.div
-            key="landing"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <Hero onPlanClick={handlePlanClick} />
-            <HowItWorks />
-            <PopularRoutes onRouteClick={() => handlePlanClick()} />
-          </motion.div>
-        )}
+        {appState === 'loading' && <LoadingScreen />}
       </AnimatePresence>
 
-      {/* Planner / Result Panel */}
-      {(appState === 'planning' || appState === 'result') && (
-        <motion.main
-          ref={plannerRef as React.RefObject<HTMLElement>}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex-1 pt-24 pb-16 px-4"
-          style={{ background: 'var(--color-bg-primary)' }}
-        >
-          {/* Aurora background for planner */}
-          <div className="fixed inset-0 bg-aurora pointer-events-none -z-10" />
-          <div className="fixed top-0 left-1/4 w-96 h-96 rounded-full bg-brand-500/[0.06] blur-[120px] pointer-events-none -z-10" />
-
-          <div className="max-w-2xl mx-auto">
-            {/* Top bar */}
-            <div className="flex items-center justify-between mb-10">
-              <div>
-                <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold mb-1">
-                  {appState === 'planning' ? 'Trip Builder' : 'Your Itinerary'}
-                </p>
-                <h1 className="font-display font-bold text-2xl text-white">
-                  {appState === 'planning' ? 'Tell us about your trip' : 'Here\'s your plan ✈️'}
-                </h1>
-              </div>
-              <button
-                onClick={handleReset}
-                className="btn-ghost py-2 px-4 rounded-xl text-sm flex items-center gap-2"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Start over</span>
-              </button>
-            </div>
-
-            {/* Form or Timeline */}
-            <AnimatePresence mode="wait">
-              {appState === 'planning' && (
-                <motion.div
-                  key="form"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <TripForm onSubmit={handleFormSubmit} isLoading={isLoading} />
-                </motion.div>
-              )}
-
-              {appState === 'result' && itinerary && (
-                <motion.div
-                  key="result"
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  {/* Re-plan button */}
-                  <div className="mb-6 flex justify-end">
-                    <button
-                      onClick={() => setAppState('planning')}
-                      className="btn-primary text-sm py-2 px-5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Re-plan Trip
-                    </button>
-                  </div>
-                  <Timeline data={itinerary} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.main>
+      {/* ── RESULT STATE ── */}
+      {appState === 'result' && itinerary && (
+        <>
+          <Navbar showBack onBackClick={handleReset} />
+          <TimelineResult data={itinerary} tripInput={tripInput} onReplan={handleReset} />
+        </>
       )}
 
-      {/* Landing sections below fold (always visible for SEO) */}
-      {appState === 'landing' && <Footer />}
+      {/* ── LANDING STATE ── */}
+      {appState === 'landing' && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+        >
+          <Navbar onPlanClick={scrollToHero} />
+
+          {/* Error toast */}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="fixed top-20 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"
+              >
+                <div
+                  className="px-6 py-3 border text-sm font-medium max-w-md text-center bg-red-950/40 border-red-900 text-red-200"
+                >
+                  ⚠ {error}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div ref={heroRef}>
+            <HeroSection onSubmit={handleSubmit} isLoading={false} />
+          </div>
+
+          <FeaturesSection />
+          <DestinationsGrid onDestinationClick={(dest) => {
+            // Pre-fill destination on click
+            heroRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }} />
+          <FAQSection />
+          <Footer />
+        </motion.div>
+      )}
     </div>
   );
 }
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
