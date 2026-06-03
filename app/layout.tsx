@@ -1,39 +1,27 @@
 import type { Metadata } from 'next';
-import { Inter, Outfit } from 'next/font/google';
+import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const playfair = Playfair_Display({
   subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-});
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  variable: '--font-outfit',
-  display: 'swap',
+  variable: '--font-display',
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: 'Yatra — AI-Powered Travel Planner for India',
-  description:
-    'Plan hyper-local Indian itineraries in seconds. From Himalayan treks to coastal backpacker trails — powered by AI, priced for every budget.',
-  keywords: 'India travel planner, itinerary generator, AI travel, Manali, Goa, Kerala, budget travel India',
-  openGraph: {
-    title: 'Yatra — AI-Powered Travel Planner for India',
-    description: 'Plan hyper-local Indian itineraries in seconds.',
-    type: 'website',
-  },
+  title: 'Safar AI | Hyper-local Indian Travel',
+  description: 'AI-powered, hyper-local itineraries for India.',
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
-      <body style={{ backgroundColor: '#0d1117' }} className="text-gray-100 antialiased">
+    <html lang="en">
+      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>
