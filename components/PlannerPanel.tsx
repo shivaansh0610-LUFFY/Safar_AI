@@ -1,53 +1,71 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Navigation, Calendar, Wallet, Zap, ArrowRight, ArrowLeft, Mountain, TreePalm, UtensilsCrossed, Check, Loader as Loader2, Globe, Sparkles } from 'lucide-react';
-
+import {
+  ArrowRight, ArrowLeft, Mountain, Globe, TreePalm, UtensilsCrossed,
+  Check, Loader2, Sparkles, MapPin, Navigation,
+} from 'lucide-react';
 import { Budget, TripInput, Vibe } from '@/types/itinerary';
 
-interface PlannerPanelProps {
+interface Props {
   onSubmit: (data: TripInput) => void;
   isLoading: boolean;
+  presetStart?: string;
+  presetDest?: string;
 }
 
-const BUDGETS: { value: Budget; label: string; desc: string; emoji: string }[] = [
-  { value: 'Backpacker', label: 'Budget',    desc: '₹800–1,500/day',  emoji: '🎒' },
-  { value: 'Mid-tier',   label: 'Mid-Range', desc: '₹2,000–5,000/day', emoji: '🏨' },
-  { value: 'Luxury',     label: 'Luxury',    desc: '₹7,000+/day',     emoji: '✨' },
+const BUDGETS: { value: Budget; emoji: string; label: string; range: string }[] = [
+  { value: 'Backpacker', emoji: '🎒', label: 'Budget',    range: '₹800–1,500/day' },
+  { value: 'Mid-tier',   emoji: '🏨', label: 'Mid-Range', range: '₹2,000–5,000/day' },
+  { value: 'Luxury',     emoji: '✨', label: 'Luxury',    range: '₹7,000+/day' },
 ];
 
-const VIBES: { value: Vibe; label: string; desc: string; Icon: React.ElementType }[] = [
-  { value: 'Adventure', label: 'Adventure', desc: 'Treks & thrills',     Icon: Mountain },
-  { value: 'Culture',   label: 'Culture',   desc: 'Temples & heritage',  Icon: Globe },
-  { value: 'Chill',     label: 'Chill',     desc: 'Beaches & cafés',     Icon: TreePalm },
-  { value: 'Foodie',    label: 'Foodie',    desc: 'Dhabas & street food', Icon: UtensilsCrossed },
+const VIBES: { value: Vibe; Icon: React.ElementType; label: string; desc: string }[] = [
+  { value: 'Adventure', Icon: Mountain,         label: 'Adventure', desc: 'Treks & thrills' },
+  { value: 'Culture',   Icon: Globe,            label: 'Culture',   desc: 'Heritage & temples' },
+  { value: 'Chill',     Icon: TreePalm,         label: 'Chill',     desc: 'Beaches & cafés' },
+  { value: 'Foodie',    Icon: UtensilsCrossed,  label: 'Foodie',    desc: 'Dhabas & street food' },
 ];
 
-const POPULAR_ORIGINS = ['Delhi', 'Mumbai', 'Bangalore', 'Hyderabad', 'Kolkata'];
-const POPULAR_DESTS   = ['Manali', 'Goa', 'Kerala', 'Rishikesh', 'Jaisalmer', 'Spiti'];
+const POPULAR_FROM = ['Delhi', 'Mumbai', 'Bangalore', 'Hyderabad'];
+const POPULAR_TO   = ['Manali', 'Goa', 'Kerala', 'Rishikesh', 'Jaisalmer'];
 
-const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 40 : -40, opacity: 0 }),
+const slideVariant = {
+  enter: (d: number) => ({ x: d > 0 ? 40 : -40, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit:  (dir: number) => ({ x: dir > 0 ? -40 : 40, opacity: 0 }),
+  exit:  (d: number) => ({ x: d > 0 ? -40 : 40, opacity: 0 }),
 };
 
-export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps) {
+export default function PlannerPanel({ onSubmit, isLoading, presetStart, presetDest }: Props) {
   const [step, setStep] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [dir, setDir]   = useState(1);
   const [form, setForm] = useState<Partial<TripInput>>({ days: 5 });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const update = (key: keyof TripInput, value: string | number) =>
-    setForm(prev => ({ ...prev, [key]: value }));
+  useEffect(() => {
+    if (presetStart) {
+      setForm(p => ({ ...p, starting_city: presetStart }));
+      // Focus/go to step 0 if needed
+      setStep(0);
+    }
+  }, [presetStart]);
+
+  useEffect(() => {
+    if (presetDest) {
+      setForm(p => ({ ...p, destination: presetDest }));
+      setStep(0);
+    }
+  }, [presetDest]);
+
+  const set = (k: keyof TripInput, v: string | number) =>
+    setForm(p => ({ ...p, [k]: v }));
 
   const validate = (s: number) => {
     const e: Record<string, string> = {};
     if (s === 0) {
-      if (!form.starting_city?.trim()) e.starting_city = 'Enter your starting city';
-      if (!form.destination?.trim())   e.destination   = 'Enter your destination';
-      if (!form.days || form.days < 1 || form.days > 30) e.days = '1–30 days only';
+      if (!form.starting_city?.trim()) e.starting_city = 'Enter origin city';
+      if (!form.destination?.trim())   e.destination   = 'Enter destination';
     }
     if (s === 1) {
       if (!form.budget) e.budget = 'Pick a budget';
@@ -60,104 +78,99 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
   const next = () => {
     if (!validate(step)) return;
     if (step === 1) { onSubmit(form as TripInput); return; }
-    setDirection(1);
-    setStep(s => s + 1);
-    setErrors({});
+    setDir(1); setStep(s => s + 1); setErrors({});
   };
-
-  const back = () => { setDirection(-1); setStep(s => s - 1); setErrors({}); };
+  const back = () => { setDir(-1); setStep(s => s - 1); setErrors({}); };
 
   return (
-    <div className="w-full">
-      {/* Step progress */}
-      <div className="flex items-center gap-2 mb-5">
-        {[0, 1].map(i => (
-          <div key={i} className="flex items-center gap-2 flex-1">
-            <div className={`step-dot ${i < step ? 'step-dot-done' : i === step ? 'step-dot-active' : 'step-dot-inactive'}`}>
-              {i < step ? <Check className="w-3.5 h-3.5" /> : <span>{i + 1}</span>}
+    <div
+      className="rounded-2xl overflow-hidden glass-strong"
+      style={{ boxShadow: '0 24px 80px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)' }}
+    >
+      {/* Progress tabs */}
+      <div
+        className="flex border-b"
+        style={{ borderColor: 'rgba(255,255,255,0.07)' }}
+      >
+        {['Route & Duration', 'Budget & Vibe'].map((label, i) => (
+          <div
+            key={i}
+            className="flex-1 flex items-center justify-center gap-2 py-3.5 text-xs font-bold uppercase tracking-widest relative cursor-default transition-colors"
+            style={{ color: step === i ? 'white' : 'var(--text-3)' }}
+          >
+            <div className={`sdot ${step > i ? 'sdot-done' : step === i ? 'sdot-active' : 'sdot-idle'}`}>
+              {step > i ? <Check className="w-3 h-3" /> : i + 1}
             </div>
-            {i < 1 && (
-              <div className="flex-1 h-px relative bg-[var(--border-color)]">
-                <motion.div
-                  className="absolute inset-y-0 left-0 bg-[var(--accent)]"
-                  animate={{ width: i < step ? '100%' : '0%' }}
-                  transition={{ duration: 0.4 }}
-                />
-              </div>
+            <span className="hidden sm:inline">{label}</span>
+            {step === i && (
+              <motion.div
+                layoutId="tab-bar"
+                className="absolute bottom-0 inset-x-0 h-px"
+                style={{ background: 'linear-gradient(90deg, var(--indigo), var(--violet))' }}
+              />
             )}
           </div>
         ))}
-        <span className="text-[11px] text-[var(--text-tertiary)] font-medium ml-1 uppercase tracking-wider">
-          {step === 0 ? 'Trip Details' : 'Preferences'}
-        </span>
       </div>
 
-      <div
-        className="editorial-card overflow-hidden rounded-xl"
-        style={{ minHeight: '320px', padding: '1.75rem' }}
-      >
-        <AnimatePresence mode="wait" custom={direction}>
+      {/* Form content */}
+      <div className="p-5 overflow-hidden" style={{ minHeight: '290px' }}>
+        <AnimatePresence mode="wait" custom={dir}>
           <motion.div
             key={step}
-            custom={direction}
-            variants={slideVariants}
+            custom={dir}
+            variants={slideVariant}
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* STEP 0 */}
+
+            {/* ── STEP 0 ── */}
             {step === 0 && (
-              <div>
-                <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-3">
+                  {/* From */}
                   <div>
-                    <label className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
-                      <Navigation className="w-3 h-3" /> From
+                    <label className="block text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-3)' }}>
+                      From
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Delhi, Mumbai..."
-                      value={form.starting_city || ''}
-                      onChange={e => update('starting_city', e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && next()}
-                      className="input-field"
-                      autoFocus
-                    />
+                    <div className="relative">
+                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text-3)' }} />
+                      <input
+                        className="input-dark pl-9"
+                        placeholder="Delhi..."
+                        value={form.starting_city || ''}
+                        onChange={e => set('starting_city', e.target.value)}
+                        autoFocus
+                      />
+                    </div>
                     {errors.starting_city && <ErrMsg msg={errors.starting_city} />}
-                    <div className="flex flex-wrap gap-1.5 mt-2.5">
-                      {POPULAR_ORIGINS.slice(0, 4).map(c => (
-                        <button
-                          key={c}
-                          onClick={() => update('starting_city', c)}
-                          className={`chip text-xs py-0.5 px-2.5 ${form.starting_city === c ? 'chip-selected' : ''}`}
-                        >
-                          {c}
-                        </button>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {POPULAR_FROM.map(c => (
+                        <QuickChip key={c} label={c} active={form.starting_city === c} onClick={() => set('starting_city', c)} />
                       ))}
                     </div>
                   </div>
+
+                  {/* To */}
                   <div>
-                    <label className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3" /> To
+                    <label className="block text-[10px] font-black uppercase tracking-widest mb-1.5" style={{ color: 'var(--text-3)' }}>
+                      To
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Manali, Goa..."
-                      value={form.destination || ''}
-                      onChange={e => update('destination', e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && next()}
-                      className="input-field"
-                    />
+                    <div className="relative">
+                      <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text-3)' }} />
+                      <input
+                        className="input-dark pl-9"
+                        placeholder="Manali..."
+                        value={form.destination || ''}
+                        onChange={e => set('destination', e.target.value)}
+                      />
+                    </div>
                     {errors.destination && <ErrMsg msg={errors.destination} />}
-                    <div className="flex flex-wrap gap-1.5 mt-2.5">
-                      {POPULAR_DESTS.slice(0, 4).map(d => (
-                        <button
-                          key={d}
-                          onClick={() => update('destination', d)}
-                          className={`chip text-xs py-0.5 px-2.5 ${form.destination === d ? 'chip-selected' : ''}`}
-                        >
-                          {d}
-                        </button>
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {POPULAR_TO.slice(0, 4).map(c => (
+                        <QuickChip key={c} label={c} active={form.destination === c} onClick={() => set('destination', c)} />
                       ))}
                     </div>
                   </div>
@@ -165,95 +178,86 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
 
                 {/* Days */}
                 <div>
-                  <label className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-2 flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3" /> Duration
+                  <label className="block text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: 'var(--text-3)' }}>
+                    Duration
                   </label>
                   <div className="flex items-center gap-4">
                     <button
-                      onClick={() => update('days', Math.max(1, (form.days || 5) - 1))}
-                      className="w-10 h-10 rounded-lg border border-[var(--border-color)] flex items-center justify-center text-xl font-light text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] hover:bg-white/[0.02] transition-all duration-200"
-                    >
-                      &minus;
-                    </button>
+                      onClick={() => set('days', Math.max(1, (form.days || 5) - 1))}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-xl font-light transition-all"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-2)' }}
+                    >−</button>
                     <div className="flex-1 text-center">
                       <motion.span
                         key={form.days}
-                        initial={{ scale: 0.8, opacity: 0 }}
+                        initial={{ scale: 0.6, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
-                        className="font-display font-medium text-5xl text-[var(--text-primary)]"
+                        className="font-display font-black text-5xl text-white block"
                       >
                         {form.days}
                       </motion.span>
-                      <p className="text-[var(--text-tertiary)] text-sm">days</p>
+                      <p className="text-xs font-bold mt-0.5" style={{ color: 'var(--text-3)' }}>days</p>
                     </div>
                     <button
-                      onClick={() => update('days', Math.min(30, (form.days || 5) + 1))}
-                      className="w-10 h-10 rounded-lg border border-[var(--border-color)] flex items-center justify-center text-xl font-light text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] hover:bg-white/[0.02] transition-all duration-200"
-                    >
-                      +
-                    </button>
+                      onClick={() => set('days', Math.min(30, (form.days || 5) + 1))}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-xl font-light transition-all"
+                      style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-2)' }}
+                    >+</button>
+                    <div className="flex gap-1.5">
+                      {[3, 5, 7, 10].map(d => (
+                        <QuickChip key={d} label={`${d}d`} active={form.days === d} onClick={() => set('days', d)} />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
-                    {[3, 5, 7, 10].map(d => (
-                      <button
-                        key={d}
-                        onClick={() => update('days', d)}
-                        className={`chip text-xs py-0.5 px-2.5 ${form.days === d ? 'chip-selected' : ''}`}
-                      >
-                        {d}d
-                      </button>
-                    ))}
-                  </div>
-                  {errors.days && <ErrMsg msg={errors.days} />}
                 </div>
               </div>
             )}
 
-            {/* STEP 1 */}
+            {/* ── STEP 1 ── */}
             {step === 1 && (
-              <div>
-                <div className="mb-6">
-                  <p className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-3 flex items-center gap-1.5">
-                    <Wallet className="w-3 h-3" /> Budget
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-5">
+                {/* Budget */}
+                <div>
+                  <label className="block text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: 'var(--text-3)' }}>
+                    Budget Range
+                  </label>
+                  <div className="grid grid-cols-3 gap-2.5">
                     {BUDGETS.map(b => (
                       <button
                         key={b.value}
-                        onClick={() => update('budget', b.value)}
-                        className={`card-select rounded-xl ${form.budget === b.value ? 'selected' : ''}`}
+                        onClick={() => set('budget', b.value)}
+                        className={`sel-dark sel-dark-saffron ${form.budget === b.value ? 'active' : ''} flex flex-col items-center gap-1.5 p-4`}
                       >
                         <span className="text-2xl">{b.emoji}</span>
-                        <span className="text-xs font-semibold" style={{ color: form.budget === b.value ? 'var(--accent-300)' : 'var(--text-secondary)' }}>
-                          {b.label}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-tertiary)]">{b.desc}</span>
+                        <span className="font-bold text-xs text-white">{b.label}</span>
+                        <span className="text-[9px] font-medium" style={{ color: 'var(--text-3)' }}>{b.range}</span>
                       </button>
                     ))}
                   </div>
                   {errors.budget && <ErrMsg msg={errors.budget} />}
                 </div>
 
+                {/* Vibe */}
                 <div>
-                  <p className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-3 flex items-center gap-1.5">
-                    <Zap className="w-3 h-3" /> Trip Vibe
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
+                  <label className="block text-[10px] font-black uppercase tracking-widest mb-2.5" style={{ color: 'var(--text-3)' }}>
+                    Trip Vibe
+                  </label>
+                  <div className="grid grid-cols-2 gap-2.5">
                     {VIBES.map(v => (
                       <button
                         key={v.value}
-                        onClick={() => update('vibe', v.value)}
-                        className={`card-select-row rounded-xl ${form.vibe === v.value ? 'selected' : ''}`}
+                        onClick={() => set('vibe', v.value)}
+                        className={`sel-dark ${form.vibe === v.value ? 'active' : ''} flex items-center gap-3 p-3 text-left`}
                       >
-                        <v.Icon
-                          className="w-4 h-4 flex-shrink-0 transition-colors duration-200"
-                          style={{ color: form.vibe === v.value ? 'var(--accent-300)' : 'var(--text-tertiary)' }}
-                        />
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
+                          style={{ background: form.vibe === v.value ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.05)' }}
+                        >
+                          <v.Icon className="w-4 h-4" style={{ color: form.vibe === v.value ? '#A5B4FC' : 'var(--text-3)' }} />
+                        </div>
                         <div>
-                          <p className="text-xs font-semibold" style={{ color: form.vibe === v.value ? 'var(--accent-300)' : 'var(--text-secondary)' }}>
-                            {v.label}
-                          </p>
-                          <p className="text-[10px] text-[var(--text-tertiary)]">{v.desc}</p>
+                          <p className="text-xs font-bold text-white">{v.label}</p>
+                          <p className="text-[10px]" style={{ color: 'var(--text-3)' }}>{v.desc}</p>
                         </div>
                       </button>
                     ))}
@@ -266,21 +270,24 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
         </AnimatePresence>
       </div>
 
-      {/* Navigation */}
-      <div className="flex items-center gap-3 mt-5">
+      {/* Footer */}
+      <div
+        className="px-5 pb-5 flex gap-2.5"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '16px' }}
+      >
         {step > 0 && (
-          <button onClick={back} className="btn-outline flex-none py-3 px-5 text-sm">
+          <button onClick={back} className="btn-ghost-dark w-11 h-11 flex-none p-0 rounded-xl">
             <ArrowLeft className="w-4 h-4" />
-            Back
           </button>
         )}
         <button
           onClick={next}
           disabled={isLoading}
-          className="btn-primary flex-1 py-3 text-sm"
+          className="btn-saffron-glow flex-1 disabled:opacity-50"
+          style={{ paddingTop: '12px', paddingBottom: '12px' }}
         >
           {isLoading ? (
-            <><Loader2 className="w-4 h-4 animate-spin" /> Generating your safar...</>
+            <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
           ) : step === 1 ? (
             <><Sparkles className="w-4 h-4" /> Generate My Safar</>
           ) : (
@@ -292,14 +299,30 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
   );
 }
 
+function QuickChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="px-2.5 py-1 rounded-full text-xs font-bold transition-all duration-200"
+      style={{
+        background: active ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.05)',
+        border: `1px solid ${active ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.08)'}`,
+        color: active ? '#A5B4FC' : 'var(--text-3)',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 function ErrMsg({ msg }: { msg: string }) {
   return (
     <motion.p
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mt-1.5 text-xs flex items-center gap-1 text-[var(--error-400)]"
+      className="mt-1.5 text-xs font-semibold text-red-400 flex items-center gap-1"
     >
-      {msg}
+      ⚠ {msg}
     </motion.p>
   );
 }
