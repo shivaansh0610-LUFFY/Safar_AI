@@ -2,10 +2,16 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bus, Brain as Train, Car, Footprints, UtensilsCrossed, Moon, Sun, Sunset, ChevronDown, IndianRupee, ExternalLink, MapPin, Tag, Sparkles } from 'lucide-react';
+import {
+  Bus, Train, Car, Footprints, UtensilsCrossed, Moon, Sun, Sunset,
+  ChevronDown, IndianRupee, ExternalLink, MapPin, Tag, Sparkles,
+  LayoutList,
+} from 'lucide-react';
 import { ItineraryDay, ItineraryResponse, TripInput } from '@/types/itinerary';
+import SpotlightCard from '@/components/SpotlightCard';
+import InteractiveParticles from '@/components/InteractiveParticles';
 
-interface TimelineResultProps {
+interface Props {
   data: ItineraryResponse;
   tripInput?: TripInput;
   onReplan: () => void;
@@ -14,120 +20,166 @@ interface TimelineResultProps {
 const getTransitIcon = (mode: string) => {
   const m = mode.toLowerCase();
   if (m.includes('train') || m.includes('irctc')) return Train;
-  if (m.includes('bus') || m.includes('hrtc') || m.includes('ksrtc') || m.includes('redbus')) return Bus;
+  if (m.includes('bus') || m.includes('hrtc') || m.includes('ksrtc')) return Bus;
   if (m.includes('walk') || m.includes('trek')) return Footprints;
   return Car;
 };
 
-const foodTypeLabel: Record<string, string> = {
-  dhaba: 'Dhaba',
-  local_eatery: 'Local Eatery',
-  cafe: 'Cafe',
+const foodLabel: Record<string, string> = {
+  dhaba: '🏕 Dhaba',
+  local_eatery: '🍛 Local Eatery',
+  cafe: '☕ Café',
 };
 
-const foodTypeColors: Record<string, { bg: string; color: string; border: string }> = {
-  dhaba: { bg: 'rgba(251,191,36,0.1)', color: '#FBBF24', border: 'rgba(251,191,36,0.2)' },
-  local_eatery: { bg: 'rgba(245,189,92,0.1)', color: '#F5BD5C', border: 'rgba(245,189,92,0.2)' },
-  cafe: { bg: 'rgba(139,221,166,0.1)', color: '#8BDDA6', border: 'rgba(139,221,166,0.2)' },
-};
+const DAY_GRADIENTS = [
+  'linear-gradient(135deg, #4F46E5, #7C3AED)',
+  'linear-gradient(135deg, #F97316, #EF4444)',
+  'linear-gradient(135deg, #10B981, #0891B2)',
+  'linear-gradient(135deg, #D97706, #F59E0B)',
+  'linear-gradient(135deg, #7C3AED, #4F46E5)',
+  'linear-gradient(135deg, #0891B2, #10B981)',
+  'linear-gradient(135deg, #EF4444, #F97316)',
+];
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
-};
-const cardVariants = {
-  hidden: { opacity: 0, y: 28 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-};
+const DAY_GLOWS = [
+  'rgba(99, 102, 241, 0.2)',
+  'rgba(249, 115, 22, 0.2)',
+  'rgba(16, 185, 129, 0.2)',
+  'rgba(217, 119, 6, 0.2)',
+  'rgba(124, 58, 237, 0.2)',
+  'rgba(8, 145, 178, 0.2)',
+  'rgba(239, 68, 68, 0.2)',
+];
 
-export default function TimelineResult({ data, tripInput, onReplan }: TimelineResultProps) {
+export default function TimelineResult({ data, tripInput, onReplan }: Props) {
   const [openDays, setOpenDays] = useState<Set<number>>(new Set([1]));
 
-  const toggleDay = (day: number) =>
-    setOpenDays(prev => {
-      const next = new Set(prev);
-      next.has(day) ? next.delete(day) : next.add(day);
-      return next;
-    });
+  const toggle = (d: number) =>
+    setOpenDays(prev => { const n = new Set(prev); n.has(d) ? n.delete(d) : n.add(d); return n; });
 
-  const formatINR = (n: number) =>
+  const fmt = (n: number) =>
     new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
   const totalTransport = data.days.reduce((s, d) => s + d.transit_logistics.estimated_fare_inr, 0);
   const dailyAvg = Math.round(data.trip_summary.total_estimated_cost_inr / data.days.length);
 
   return (
-    <div className="min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">
-        <div className="grid lg:grid-cols-[280px_1fr] gap-8 lg:gap-12">
+    <div className="min-h-screen bg-[#030309] noise pb-24 relative">
+      {/* Background Particles */}
+      <InteractiveParticles />
 
-          {/* SIDEBAR */}
-          <div className="lg:sticky lg:top-28 self-start">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="editorial-card p-6 rounded-xl"
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--secondary-400)] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--secondary-400)]" />
+      {/* Ambient Grid */}
+      <div className="absolute inset-0 dot-grid opacity-20 pointer-events-none" />
+
+      {/* Ambient glows */}
+      <div className="orb orb-1 absolute top-[-5%] left-[-10%] opacity-35 pointer-events-none" />
+      <div className="orb orb-2 absolute top-[25%] right-[-15%] opacity-25 pointer-events-none" />
+
+      {/* ── HERO BANNER ── */}
+      <div
+        className="pt-28 pb-16 px-5 sm:px-8 border-b border-white/[0.06] relative z-10"
+      >
+        <div className="max-w-6xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <p className="eyebrow mb-3">AI-Generated Itinerary</p>
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl text-white mb-4 leading-tight">
+              {tripInput?.starting_city && `${tripInput.starting_city} → `}
+              <span className="grad-multi">{data.trip_summary.destination}</span>
+            </h1>
+            <div className="flex flex-wrap items-center gap-3 mb-8">
+              {[
+                { label: `${data.days.length} Days` },
+                tripInput?.budget ? { label: tripInput.budget } : null,
+                tripInput?.vibe   ? { label: tripInput.vibe }   : null,
+              ].filter(Boolean).map((b, i) => (
+                <span
+                  key={i}
+                  className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-white/5 border border-white/10 text-white/70"
+                >
+                  {(b as { label: string }).label}
                 </span>
-                <p className="text-[10px] text-[var(--text-tertiary)] uppercase tracking-[0.15em] font-semibold">
-                  AI-Generated Safar
-                </p>
-              </div>
-              <h2 className="font-display font-medium text-2xl text-[var(--text-primary)] mb-2">
-                {data.trip_summary.destination}
-              </h2>
-              <div className="flex items-center gap-2 text-sm mb-6 text-[var(--text-secondary)]">
-                <MapPin className="w-3.5 h-3.5 text-[var(--accent)]" />
-                <span>{data.days.length} days</span>
-                {tripInput && (
-                  <>
-                    <span className="w-1 h-1 bg-[var(--border-hover)] rounded-full" />
-                    <span>{tripInput.budget}</span>
-                    <span className="w-1 h-1 bg-[var(--border-hover)] rounded-full" />
-                    <span>{tripInput.vibe}</span>
-                  </>
-                )}
-              </div>
+              ))}
+            </div>
 
-              {/* Cost breakdown */}
-              <div className="space-y-0 mb-6">
-                <CostRow label="Total Estimate" value={formatINR(data.trip_summary.total_estimated_cost_inr)} highlight />
-                <CostRow label="Transport" value={formatINR(totalTransport)} />
-                <CostRow label="Daily Average" value={formatINR(dailyAvg)} />
-                <CostRow label="Currency" value="INR" />
-              </div>
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-4 max-w-lg">
+              {[
+                { label: 'Total Budget', value: fmt(data.trip_summary.total_estimated_cost_inr), color: 'grad-saffron' },
+                { label: 'Transport', value: fmt(totalTransport), color: 'text-white' },
+                { label: 'Per Day', value: fmt(dailyAvg), color: 'text-white/80' },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className="rounded-2xl p-4 border border-white/[0.06] bg-white/[0.02] backdrop-blur-md"
+                >
+                  <p className="text-[9px] font-black uppercase tracking-wider text-white/30 mb-1">{s.label}</p>
+                  <p className={`font-display font-bold text-lg ${s.color}`}>{s.value}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
 
-              {/* Re-plan */}
-              <button onClick={onReplan} className="btn-editorial w-full text-sm py-3 rounded-lg">
-                <Sparkles className="w-4 h-4" />
-                Re-plan This Trip
-              </button>
-            </motion.div>
+      {/* ── MAIN CONTENT ── */}
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12 relative z-10">
+        <div className="grid lg:grid-cols-[280px_1fr] gap-8">
+
+          {/* ── SIDEBAR NAVIGATOR ── */}
+          <div className="lg:sticky lg:top-24 self-start space-y-4">
+            <div className="border border-white/[0.06] bg-white/[0.02] backdrop-blur-md rounded-2xl p-5">
+              <h3 className="font-display font-bold text-xs uppercase tracking-wider text-white mb-4 flex items-center gap-2">
+                <LayoutList className="w-4 h-4 text-indigo-400" />
+                Days Overview
+              </h3>
+              <div className="space-y-2">
+                {data.days.map((day, i) => (
+                  <button
+                    key={day.day_number}
+                    onClick={() => toggle(day.day_number)}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 text-left border border-transparent hover:border-white/5"
+                    style={{
+                      background: openDays.has(day.day_number) ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                    }}
+                  >
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-white font-black text-[10px] flex-shrink-0"
+                      style={{ background: DAY_GRADIENTS[i % DAY_GRADIENTS.length] }}
+                    >
+                      {day.day_number}
+                    </div>
+                    <p className="text-xs font-semibold text-white/70 truncate">{day.morning_activity.title}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={onReplan}
+              className="btn-glow w-full py-3.5 text-xs flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" />
+              Re-plan This Trip
+            </button>
           </div>
 
-          {/* MAIN TIMELINE */}
-          <div>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-3"
-            >
-              {data.days.map((day) => (
-                <DayCard
-                  key={day.day_number}
-                  day={day}
-                  isOpen={openDays.has(day.day_number)}
-                  onToggle={() => toggleDay(day.day_number)}
-                  formatINR={formatINR}
-                />
-              ))}
-            </motion.div>
+          {/* ── TIMELINE RESULT CARDS ── */}
+          <div className="space-y-6">
+            {data.days.map((day, i) => (
+              <DayCard
+                key={day.day_number}
+                day={day}
+                gradient={DAY_GRADIENTS[i % DAY_GRADIENTS.length]}
+                glowColor={DAY_GLOWS[i % DAY_GLOWS.length]}
+                isOpen={openDays.has(day.day_number)}
+                onToggle={() => toggle(day.day_number)}
+                fmt={fmt}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -135,198 +187,172 @@ export default function TimelineResult({ data, tripInput, onReplan }: TimelineRe
   );
 }
 
-function CostRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-2.5 border-b border-[var(--border-color)] last:border-0 last:pb-0">
-      <span className="text-xs text-[var(--text-tertiary)]">{label}</span>
-      <span
-        className="text-sm font-medium"
-        style={{ color: highlight ? 'var(--accent-300)' : 'var(--text-primary)' }}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
-
 function DayCard({
-  day, isOpen, onToggle, formatINR,
+  day, gradient, glowColor, isOpen, onToggle, fmt,
 }: {
   day: ItineraryDay;
+  gradient: string;
+  glowColor: string;
   isOpen: boolean;
   onToggle: () => void;
-  formatINR: (n: number) => string;
+  fmt: (n: number) => string;
 }) {
   const TransitIcon = getTransitIcon(day.transit_logistics.mode);
 
   return (
-    <motion.div variants={cardVariants} className="editorial-card overflow-hidden rounded-xl">
-      {/* Day header */}
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between p-5 text-left transition-colors duration-200 hover:bg-white/[0.01]"
-        aria-expanded={isOpen}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full"
+    >
+      <SpotlightCard
+        glowColor={glowColor}
+        className="w-full"
       >
-        <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-lg border border-[var(--border-color)] flex items-center justify-center flex-shrink-0 font-display font-medium text-sm text-[var(--text-primary)] bg-[var(--bg-base)]">
-            D{day.day_number}
-          </div>
-          <div>
-            <p className="font-display text-[var(--text-primary)] text-lg leading-tight">
-              {day.morning_activity.title}
-            </p>
-            <p className="text-xs mt-1 flex items-center gap-1.5 text-[var(--text-secondary)]">
-              <TransitIcon className="w-3 h-3 text-[var(--accent-300)]" />
-              {day.transit_logistics.mode} &middot; {formatINR(day.transit_logistics.estimated_fare_inr)}
-            </p>
-          </div>
-        </div>
-        <motion.div
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.25 }}
-          className="flex-shrink-0 text-[var(--text-tertiary)]"
+        <button
+          onClick={onToggle}
+          className="w-full flex items-center gap-4 p-5 text-left transition-colors cursor-pointer select-none"
+          aria-expanded={isOpen}
         >
-          <ChevronDown className="w-5 h-5" />
-        </motion.div>
-      </button>
-
-      {/* Expanded content */}
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-display font-black text-lg flex-shrink-0"
+            style={{ background: gradient }}
           >
-            <div className="px-5 pb-5 space-y-4 pt-4 border-t border-[var(--border-color)]">
-              {/* Transit */}
-              <Section
-                icon={<TransitIcon className="w-4 h-4 text-white" />}
-                nodeClass="node-transit"
-                tag="Transit"
-                tagClass="tag-transit"
-                title={day.transit_logistics.mode}
-              >
-                <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-                  {day.transit_logistics.details}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="flex items-center gap-1 text-xs font-medium text-[var(--accent-300)]">
-                    <IndianRupee className="w-3 h-3" />
-                    {formatINR(day.transit_logistics.estimated_fare_inr)}
-                  </span>
-                  <span className="w-1 h-1 rounded-full bg-[var(--border-hover)]" />
-                  <span className="text-xs text-[var(--text-tertiary)]">
-                    {day.transit_logistics.booking_hint_keyword}
-                  </span>
-                </div>
-              </Section>
-
-              {/* Morning */}
-              <Section
-                icon={<Sun className="w-4 h-4 text-white" />}
-                nodeClass="node-activity"
-                tag="Morning"
-                tagClass="tag-activity"
-                title={day.morning_activity.title}
-              >
-                <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-                  {day.morning_activity.description}
-                </p>
-              </Section>
-
-              {/* Lunch */}
-              <Section
-                icon={<UtensilsCrossed className="w-4 h-4 text-white" />}
-                nodeClass="node-food"
-                tag="Lunch"
-                tagClass="tag-food"
-                title={day.lunch_spot.name}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider"
-                    style={{
-                      background: foodTypeColors[day.lunch_spot.type]?.bg ?? 'rgba(251,191,36,0.1)',
-                      color: foodTypeColors[day.lunch_spot.type]?.color ?? '#FBBF24',
-                      border: `1px solid ${foodTypeColors[day.lunch_spot.type]?.border ?? 'rgba(251,191,36,0.2)'}`,
-                    }}
-                  >
-                    {foodTypeLabel[day.lunch_spot.type] ?? day.lunch_spot.type}
-                  </span>
-                </div>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  <span className="font-medium text-[var(--accent-200)]">Must try: </span>
-                  {day.lunch_spot.must_try_dish}
-                </p>
-              </Section>
-
-              {/* Afternoon */}
-              <Section
-                icon={<Sunset className="w-4 h-4 text-white" />}
-                nodeClass="node-activity"
-                tag="Afternoon"
-                tagClass="tag-activity"
-                title={day.afternoon_activity.title}
-              >
-                <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-                  {day.afternoon_activity.description}
-                </p>
-              </Section>
-
-              {/* Night */}
-              <Section
-                icon={<Moon className="w-4 h-4 text-white" />}
-                nodeClass="node-stay"
-                tag="Night"
-                tagClass="tag-stay"
-                title={day.dinner_and_stay.restaurant}
-              >
-                <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
-                  <span className="font-medium text-[var(--secondary-200)]">Stay: </span>
-                  {day.dinner_and_stay.stay_recommendation}
-                </p>
-              </Section>
-
-              {/* Affiliate CTA */}
-              {day.affiliate_cta && (
-                <motion.a
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  href={day.affiliate_cta.target_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between w-full px-4 py-3.5 rounded-xl mt-1 transition-all duration-300 group"
-                  style={{ background: 'rgba(212,128,48,0.06)', border: '1px solid rgba(212,128,48,0.15)' }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(212,128,48,0.12)' }}>
-                      <Tag className="w-3.5 h-3.5 text-[var(--accent-300)]" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-[var(--text-tertiary)]">via {day.affiliate_cta.platform_name}</p>
-                      <p className="text-sm font-semibold text-[var(--accent-300)] group-hover:text-[var(--accent-200)] transition-colors">
-                        {day.affiliate_cta.button_label}
-                      </p>
-                    </div>
-                  </div>
-                  <ExternalLink className="w-4 h-4 flex-shrink-0 text-[var(--text-muted)] group-hover:text-[var(--accent-300)] transition-colors" />
-                </motion.a>
-              )}
-            </div>
+            {day.day_number}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-display font-bold text-white text-base leading-tight truncate">{day.morning_activity.title}</p>
+            <p className="text-xs text-white/50 font-semibold mt-1 flex items-center gap-1.5">
+              <TransitIcon className="w-3.5 h-3.5 opacity-60" />
+              {day.transit_logistics.mode} · {fmt(day.transit_logistics.estimated_fare_inr)}
+            </p>
+          </div>
+          <motion.div
+            animate={{ rotate: isOpen ? 180 : 0 }}
+            transition={{ duration: 0.25 }}
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-white/5 border border-white/10"
+          >
+            <ChevronDown className="w-4 h-4 text-white/60" />
           </motion.div>
-        )}
-      </AnimatePresence>
+        </button>
+
+        <AnimatePresence initial={false}>
+          {isOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className="px-5 pb-6 space-y-6 border-t border-white/[0.06] pt-6">
+
+                {/* Transit Details */}
+                <Row
+                  icon={<TransitIcon className="w-4 h-4 text-white" />}
+                  bg="var(--saffron)"
+                  tag="Transit"
+                  tagClass="pill pill-saffron"
+                  title={day.transit_logistics.mode}
+                >
+                  <p className="text-sm text-white/60 leading-relaxed font-medium">{day.transit_logistics.details}</p>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="flex items-center gap-1 text-xs font-bold text-orange-400">
+                      <IndianRupee className="w-3 h-3" />{fmt(day.transit_logistics.estimated_fare_inr)}
+                    </span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                    <span className="text-xs text-white/40 font-semibold">{day.transit_logistics.booking_hint_keyword}</span>
+                  </div>
+                </Row>
+
+                {/* Morning Activity */}
+                <Row
+                  icon={<Sun className="w-4 h-4 text-white" />}
+                  bg="var(--indigo)"
+                  tag="Morning"
+                  tagClass="pill pill-indigo"
+                  title={day.morning_activity.title}
+                >
+                  <p className="text-sm text-white/60 leading-relaxed font-medium">{day.morning_activity.description}</p>
+                </Row>
+
+                {/* Lunch Spot */}
+                <Row
+                  icon={<UtensilsCrossed className="w-4 h-4 text-white" />}
+                  bg="#D97706"
+                  tag="Lunch"
+                  tagClass="pill bg-amber-500/10 text-amber-300 border border-amber-500/35"
+                  title={day.lunch_spot.name}
+                >
+                  <span className="inline-block text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full mb-2 bg-amber-500/15 text-amber-300 border border-amber-500/20">
+                    {foodLabel[day.lunch_spot.type] ?? day.lunch_spot.type}
+                  </span>
+                  <p className="text-sm text-white/60 font-medium">
+                    <span className="font-bold text-white">Must try: </span>
+                    {day.lunch_spot.must_try_dish}
+                  </p>
+                </Row>
+
+                {/* Afternoon Activity */}
+                <Row
+                  icon={<Sunset className="w-4 h-4 text-white" />}
+                  bg="#7C3AED"
+                  tag="Afternoon"
+                  tagClass="pill bg-violet-500/10 text-violet-300 border border-violet-500/35"
+                  title={day.afternoon_activity.title}
+                >
+                  <p className="text-sm text-white/60 leading-relaxed font-medium">{day.afternoon_activity.description}</p>
+                </Row>
+
+                {/* Dinner & Stay Details */}
+                <Row
+                  icon={<Moon className="w-4 h-4 text-white" />}
+                  bg="#059669"
+                  tag="Night"
+                  tagClass="pill pill-jade"
+                  title={day.dinner_and_stay.restaurant}
+                >
+                  <p className="text-sm text-white/60 font-medium leading-relaxed">
+                    <span className="font-bold text-white">Stay: </span>
+                    {day.dinner_and_stay.stay_recommendation}
+                  </p>
+                </Row>
+
+                {/* Custom booking affiliate banner */}
+                {day.affiliate_cta && (
+                  <motion.a
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    href={day.affiliate_cta.target_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between p-4 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.03] hover:bg-indigo-500/[0.08] hover:border-indigo-500/40 transition-all duration-300 cursor-pointer select-none group"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-600/20 border border-indigo-500/20">
+                        <Tag className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">via {day.affiliate_cta.platform_name}</p>
+                        <p className="text-sm font-bold text-indigo-300 group-hover:text-indigo-200 transition-colors">{day.affiliate_cta.button_label}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-colors" />
+                  </motion.a>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </SpotlightCard>
     </motion.div>
   );
 }
 
-function Section({
-  icon, nodeClass, tag, tagClass, title, children,
+function Row({
+  icon, bg, tag, tagClass, title, children,
 }: {
   icon: React.ReactNode;
-  nodeClass: string;
+  bg: string;
   tag: string;
   tagClass: string;
   title: string;
@@ -334,14 +360,14 @@ function Section({
 }) {
   return (
     <div className="flex gap-4">
-      <div className={`timeline-node ${nodeClass} flex-shrink-0 mt-0.5`}>{icon}</div>
+      <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: bg }}>
+        {icon}
+      </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1.5">
-          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold uppercase tracking-wider ${tagClass}`}>
-            {tag}
-          </span>
-        </div>
-        <p className="font-semibold text-[var(--text-primary)] text-sm mb-1.5 leading-tight">{title}</p>
+        <span className={`${tagClass} mb-2`}>
+          {tag}
+        </span>
+        <p className="font-display font-bold text-sm text-white mb-1.5 leading-tight">{title}</p>
         {children}
       </div>
     </div>
