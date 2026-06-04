@@ -7,7 +7,6 @@ import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import DestinationsGrid from '@/components/DestinationsGrid';
-import TestimonialsSection from '@/components/TestimonialsSection';
 import FAQSection from '@/components/FAQSection';
 import Footer from '@/components/Footer';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -25,10 +24,7 @@ export default function HomePage() {
   const [error, setError] = useState<string | null>(null);
 
   const heroRef = useRef<HTMLDivElement>(null);
-
-  const scrollToHero = () => {
-    heroRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollToHero = () => heroRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   const handleSubmit = async (data: TripInput) => {
     setTripInput(data);
@@ -48,8 +44,8 @@ export default function HomePage() {
         const errMsg = errJson.error as string | undefined;
 
         if (res.status === 503 || errMsg?.includes('GEMINI_API_KEY')) {
-          console.warn('[SafarAI] API key not configured — using mock data for demo');
-          await delay(2000);
+          console.warn('[SafarAI] No API key — using mock data');
+          await delay(2500);
           setItinerary(mockItinerary);
           setAppState('result');
           return;
@@ -77,13 +73,11 @@ export default function HomePage() {
   };
 
   return (
-    <div className="bg-[var(--bg-base)] min-h-screen">
-      {/* LOADING STATE */}
+    <div style={{ background: 'var(--black)', minHeight: '100vh' }}>
       <AnimatePresence>
         {appState === 'loading' && <LoadingScreen />}
       </AnimatePresence>
 
-      {/* RESULT STATE */}
       {appState === 'result' && itinerary && (
         <>
           <Navbar showBack onBackClick={handleReset} />
@@ -91,13 +85,8 @@ export default function HomePage() {
         </>
       )}
 
-      {/* LANDING STATE */}
       {appState === 'landing' && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4 }}
-        >
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
           <Navbar onPlanClick={scrollToHero} />
 
           {/* Error toast */}
@@ -109,15 +98,8 @@ export default function HomePage() {
                 exit={{ opacity: 0, y: -20 }}
                 className="fixed top-20 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"
               >
-                <div
-                  className="px-6 py-3 rounded-xl text-sm font-medium max-w-md text-center backdrop-blur-xl"
-                  style={{
-                    background: 'rgba(127,29,29,0.4)',
-                    border: '1px solid rgba(248,113,113,0.2)',
-                    color: '#fca5a5',
-                  }}
-                >
-                  {error}
+                <div className="px-6 py-3.5 rounded-2xl text-xs font-black uppercase tracking-wider max-w-md text-center bg-red-500/10 border border-red-500/35 text-red-400 shadow-[0_12px_40px_rgba(239,68,68,0.15)] backdrop-blur-md">
+                  ⚠ {error}
                 </div>
               </motion.div>
             )}
@@ -128,10 +110,7 @@ export default function HomePage() {
           </div>
 
           <FeaturesSection />
-          <DestinationsGrid onDestinationClick={(dest) => {
-            heroRef.current?.scrollIntoView({ behavior: 'smooth' });
-          }} />
-          <TestimonialsSection />
+          <DestinationsGrid onDestinationClick={() => { heroRef.current?.scrollIntoView({ behavior: 'smooth' }); }} />
           <FAQSection />
           <Footer />
         </motion.div>
