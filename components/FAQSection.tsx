@@ -35,7 +35,7 @@ export default function FAQSection() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section id="faq" className="py-24 px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="py-32 px-4 sm:px-6 lg:px-8 section-divider">
       <div className="max-w-7xl mx-auto">
         <div className="grid md:grid-cols-[2fr_3fr] gap-12 lg:gap-20">
 
@@ -47,10 +47,10 @@ export default function FAQSection() {
             transition={{ duration: 0.7 }}
             className="md:sticky md:top-28 self-start"
           >
-            <p className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: '#F4845F' }}>
+            <span className="inline-block text-[11px] font-semibold uppercase tracking-[0.15em] text-[var(--accent-300)] mb-4">
               FAQ
-            </p>
-            <h2 className="font-display font-medium text-4xl sm:text-5xl text-[var(--text-primary)] mb-6 leading-tight">
+            </span>
+            <h2 className="font-display font-medium text-4xl sm:text-5xl text-[var(--text-primary)] mb-6 leading-tight tracking-tight">
               Common<br />inquiries.
             </h2>
             <p className="text-[var(--text-secondary)] text-lg leading-relaxed max-w-xs">
@@ -72,7 +72,7 @@ export default function FAQSection() {
                   className="w-full flex items-start justify-between gap-4 py-5 text-left group"
                 >
                   <span
-                    className="font-medium text-lg leading-snug transition-colors duration-200"
+                    className="font-medium text-base leading-snug transition-colors duration-200"
                     style={{ color: open === i ? 'var(--text-primary)' : 'var(--text-secondary)' }}
                   >
                     {faq.q}
@@ -80,10 +80,13 @@ export default function FAQSection() {
                   <motion.div
                     animate={{ rotate: open === i ? 180 : 0 }}
                     transition={{ duration: 0.25 }}
-                    className="flex-shrink-0 mt-1"
-                    style={{ color: open === i ? 'var(--accent)' : 'var(--text-tertiary)' }}
+                    className="flex-shrink-0 mt-1 w-6 h-6 rounded-full flex items-center justify-center transition-colors duration-200"
+                    style={{
+                      color: open === i ? 'var(--accent-300)' : 'var(--text-tertiary)',
+                      background: open === i ? 'rgba(212,128,48,0.1)' : 'transparent',
+                    }}
                   >
-                    <ChevronDown className="w-5 h-5" />
+                    <ChevronDown className="w-4 h-4" />
                   </motion.div>
                 </button>
                 <AnimatePresence initial={false}>

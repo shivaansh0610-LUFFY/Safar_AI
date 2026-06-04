@@ -2,10 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  MapPin, Navigation, Calendar, Wallet, Zap, ArrowRight, ArrowLeft,
-  Mountain, TreePalm, UtensilsCrossed, Check, Loader2, Globe, Sparkles,
-} from 'lucide-react';
+import { MapPin, Navigation, Calendar, Wallet, Zap, ArrowRight, ArrowLeft, Mountain, TreePalm, UtensilsCrossed, Check, Loader as Loader2, Globe, Sparkles } from 'lucide-react';
 
 import { Budget, TripInput, Vibe } from '@/types/itinerary';
 
@@ -90,13 +87,13 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
             )}
           </div>
         ))}
-        <span className="text-xs text-[#8B8B8B] font-medium ml-1">
+        <span className="text-[11px] text-[var(--text-tertiary)] font-medium ml-1 uppercase tracking-wider">
           {step === 0 ? 'Trip Details' : 'Preferences'}
         </span>
       </div>
 
       <div
-        className="editorial-card overflow-hidden"
+        className="editorial-card overflow-hidden rounded-xl"
         style={{ minHeight: '320px', padding: '1.75rem' }}
       >
         <AnimatePresence mode="wait" custom={direction}>
@@ -109,13 +106,13 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
             exit="exit"
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* STEP 0 — Route + Days */}
+            {/* STEP 0 */}
             {step === 0 && (
               <div>
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-5">
                   <div>
-                    <label className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                      <Navigation className="w-3 h-3 text-[var(--text-tertiary)]" /> From
+                    <label className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
+                      <Navigation className="w-3 h-3" /> From
                     </label>
                     <input
                       type="text"
@@ -127,12 +124,12 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
                       autoFocus
                     />
                     {errors.starting_city && <ErrMsg msg={errors.starting_city} />}
-                    <div className="flex flex-wrap gap-1.5 mt-2">
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
                       {POPULAR_ORIGINS.slice(0, 4).map(c => (
                         <button
                           key={c}
                           onClick={() => update('starting_city', c)}
-                          className={`chip text-xs py-0.5 px-2 ${form.starting_city === c ? 'chip-selected' : ''}`}
+                          className={`chip text-xs py-0.5 px-2.5 ${form.starting_city === c ? 'chip-selected' : ''}`}
                         >
                           {c}
                         </button>
@@ -140,8 +137,8 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-[var(--text-tertiary)]" /> To
+                    <label className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-1.5 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3" /> To
                     </label>
                     <input
                       type="text"
@@ -152,12 +149,12 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
                       className="input-field"
                     />
                     {errors.destination && <ErrMsg msg={errors.destination} />}
-                    <div className="flex flex-wrap gap-1.5 mt-2">
+                    <div className="flex flex-wrap gap-1.5 mt-2.5">
                       {POPULAR_DESTS.slice(0, 4).map(d => (
                         <button
                           key={d}
                           onClick={() => update('destination', d)}
-                          className={`chip text-xs py-0.5 px-2 ${form.destination === d ? 'chip-selected' : ''}`}
+                          className={`chip text-xs py-0.5 px-2.5 ${form.destination === d ? 'chip-selected' : ''}`}
                         >
                           {d}
                         </button>
@@ -168,15 +165,15 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
 
                 {/* Days */}
                 <div>
-                  <label className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3 text-[var(--text-tertiary)]" /> Duration
+                  <label className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-2 flex items-center gap-1.5">
+                    <Calendar className="w-3 h-3" /> Duration
                   </label>
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => update('days', Math.max(1, (form.days || 5) - 1))}
-                      className="w-10 h-10 border border-[var(--border-color)] flex items-center justify-center text-xl font-light text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-secondary)] transition-all"
+                      className="w-10 h-10 rounded-lg border border-[var(--border-color)] flex items-center justify-center text-xl font-light text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] hover:bg-white/[0.02] transition-all duration-200"
                     >
-                      −
+                      &minus;
                     </button>
                     <div className="flex-1 text-center">
                       <motion.span
@@ -187,47 +184,47 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
                       >
                         {form.days}
                       </motion.span>
-                      <p className="text-[var(--text-secondary)] text-sm">days</p>
+                      <p className="text-[var(--text-tertiary)] text-sm">days</p>
                     </div>
                     <button
                       onClick={() => update('days', Math.min(30, (form.days || 5) + 1))}
-                      className="w-10 h-10 border border-[var(--border-color)] flex items-center justify-center text-xl font-light text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--text-secondary)] transition-all"
+                      className="w-10 h-10 rounded-lg border border-[var(--border-color)] flex items-center justify-center text-xl font-light text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] hover:bg-white/[0.02] transition-all duration-200"
                     >
                       +
                     </button>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[3, 5, 7, 10].map(d => (
-                        <button
-                          key={d}
-                          onClick={() => update('days', d)}
-                          className={`chip text-xs py-0.5 px-2 ${form.days === d ? 'chip-selected' : ''}`}
-                        >
-                          {d}d
-                        </button>
-                      ))}
-                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
+                    {[3, 5, 7, 10].map(d => (
+                      <button
+                        key={d}
+                        onClick={() => update('days', d)}
+                        className={`chip text-xs py-0.5 px-2.5 ${form.days === d ? 'chip-selected' : ''}`}
+                      >
+                        {d}d
+                      </button>
+                    ))}
                   </div>
                   {errors.days && <ErrMsg msg={errors.days} />}
                 </div>
               </div>
             )}
 
-            {/* STEP 1 — Budget + Vibe */}
+            {/* STEP 1 */}
             {step === 1 && (
               <div>
-                <div className="mb-5">
-                  <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <Wallet className="w-3 h-3 text-[var(--text-tertiary)]" /> Budget
+                <div className="mb-6">
+                  <p className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-3 flex items-center gap-1.5">
+                    <Wallet className="w-3 h-3" /> Budget
                   </p>
                   <div className="grid grid-cols-3 gap-2">
                     {BUDGETS.map(b => (
                       <button
                         key={b.value}
                         onClick={() => update('budget', b.value)}
-                        className={`card-select ${form.budget === b.value ? 'selected' : ''}`}
+                        className={`card-select rounded-xl ${form.budget === b.value ? 'selected' : ''}`}
                       >
                         <span className="text-2xl">{b.emoji}</span>
-                        <span className="text-xs font-semibold" style={{ color: form.budget === b.value ? 'var(--accent)' : 'var(--text-secondary)' }}>
+                        <span className="text-xs font-semibold" style={{ color: form.budget === b.value ? 'var(--accent-300)' : 'var(--text-secondary)' }}>
                           {b.label}
                         </span>
                         <span className="text-[10px] text-[var(--text-tertiary)]">{b.desc}</span>
@@ -238,24 +235,22 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
                 </div>
 
                 <div>
-                  <p className="text-xs text-[var(--text-secondary)] font-semibold uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                    <Zap className="w-3 h-3 text-[var(--text-tertiary)]" /> Trip Vibe
+                  <p className="text-[11px] text-[var(--text-tertiary)] font-semibold uppercase tracking-[0.1em] mb-3 flex items-center gap-1.5">
+                    <Zap className="w-3 h-3" /> Trip Vibe
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     {VIBES.map(v => (
                       <button
                         key={v.value}
                         onClick={() => update('vibe', v.value)}
-                        className={`card-select-row ${form.vibe === v.value ? 'selected' : ''}`}
+                        className={`card-select-row rounded-xl ${form.vibe === v.value ? 'selected' : ''}`}
                       >
                         <v.Icon
-                          style={{
-                            width: '1rem', height: '1rem', flexShrink: 0,
-                            color: form.vibe === v.value ? 'var(--accent)' : 'var(--text-tertiary)',
-                          }}
+                          className="w-4 h-4 flex-shrink-0 transition-colors duration-200"
+                          style={{ color: form.vibe === v.value ? 'var(--accent-300)' : 'var(--text-tertiary)' }}
                         />
                         <div>
-                          <p className="text-xs font-semibold" style={{ color: form.vibe === v.value ? 'var(--accent)' : 'var(--text-secondary)' }}>
+                          <p className="text-xs font-semibold" style={{ color: form.vibe === v.value ? 'var(--accent-300)' : 'var(--text-secondary)' }}>
                             {v.label}
                           </p>
                           <p className="text-[10px] text-[var(--text-tertiary)]">{v.desc}</p>
@@ -272,9 +267,9 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center gap-3 mt-4">
+      <div className="flex items-center gap-3 mt-5">
         {step > 0 && (
-          <button onClick={back} className="btn-outline flex-none py-3.5 px-5 text-sm">
+          <button onClick={back} className="btn-outline flex-none py-3 px-5 text-sm">
             <ArrowLeft className="w-4 h-4" />
             Back
           </button>
@@ -282,7 +277,7 @@ export default function PlannerPanel({ onSubmit, isLoading }: PlannerPanelProps)
         <button
           onClick={next}
           disabled={isLoading}
-          className="btn-editorial flex-1 py-3.5 text-sm"
+          className="btn-primary flex-1 py-3 text-sm"
         >
           {isLoading ? (
             <><Loader2 className="w-4 h-4 animate-spin" /> Generating your safar...</>
@@ -302,12 +297,9 @@ function ErrMsg({ msg }: { msg: string }) {
     <motion.p
       initial={{ opacity: 0, y: -4 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mt-1.5 text-xs flex items-center gap-1"
-      style={{ color: '#f87171' }}
+      className="mt-1.5 text-xs flex items-center gap-1 text-[var(--error-400)]"
     >
-      ⚠ {msg}
+      {msg}
     </motion.p>
   );
 }
-
-

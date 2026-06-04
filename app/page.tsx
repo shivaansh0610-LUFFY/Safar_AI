@@ -7,14 +7,13 @@ import Navbar from '@/components/Navbar';
 import HeroSection from '@/components/HeroSection';
 import FeaturesSection from '@/components/FeaturesSection';
 import DestinationsGrid from '@/components/DestinationsGrid';
+import TestimonialsSection from '@/components/TestimonialsSection';
 import FAQSection from '@/components/FAQSection';
 import Footer from '@/components/Footer';
 import LoadingScreen from '@/components/LoadingScreen';
 import TimelineResult from '@/components/TimelineResult';
 
 import { ItineraryResponse, TripInput } from '@/types/itinerary';
-
-// Fallback mock when no API key is set (dev/demo mode)
 import { mockItinerary } from '@/lib/mock-data';
 
 type AppState = 'landing' | 'loading' | 'result';
@@ -48,7 +47,6 @@ export default function HomePage() {
         const errJson = await res.json().catch(() => ({}));
         const errMsg = errJson.error as string | undefined;
 
-        // Graceful fallback to mock data if API key missing
         if (res.status === 503 || errMsg?.includes('GEMINI_API_KEY')) {
           console.warn('[SafarAI] API key not configured — using mock data for demo');
           await delay(2000);
@@ -80,12 +78,12 @@ export default function HomePage() {
 
   return (
     <div className="bg-[var(--bg-base)] min-h-screen">
-      {/* ── LOADING STATE ── */}
+      {/* LOADING STATE */}
       <AnimatePresence>
         {appState === 'loading' && <LoadingScreen />}
       </AnimatePresence>
 
-      {/* ── RESULT STATE ── */}
+      {/* RESULT STATE */}
       {appState === 'result' && itinerary && (
         <>
           <Navbar showBack onBackClick={handleReset} />
@@ -93,7 +91,7 @@ export default function HomePage() {
         </>
       )}
 
-      {/* ── LANDING STATE ── */}
+      {/* LANDING STATE */}
       {appState === 'landing' && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -112,9 +110,14 @@ export default function HomePage() {
                 className="fixed top-20 inset-x-0 z-50 flex justify-center px-4 pointer-events-none"
               >
                 <div
-                  className="px-6 py-3 border text-sm font-medium max-w-md text-center bg-red-950/40 border-red-900 text-red-200"
+                  className="px-6 py-3 rounded-xl text-sm font-medium max-w-md text-center backdrop-blur-xl"
+                  style={{
+                    background: 'rgba(127,29,29,0.4)',
+                    border: '1px solid rgba(248,113,113,0.2)',
+                    color: '#fca5a5',
+                  }}
                 >
-                  ⚠ {error}
+                  {error}
                 </div>
               </motion.div>
             )}
@@ -126,9 +129,9 @@ export default function HomePage() {
 
           <FeaturesSection />
           <DestinationsGrid onDestinationClick={(dest) => {
-            // Pre-fill destination on click
             heroRef.current?.scrollIntoView({ behavior: 'smooth' });
           }} />
+          <TestimonialsSection />
           <FAQSection />
           <Footer />
         </motion.div>
